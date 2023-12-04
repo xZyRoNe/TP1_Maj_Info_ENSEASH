@@ -6,7 +6,7 @@
 #include <time.h> 
 
 
-/* Définition des chaînes de caractères utilisées dans le code */
+/* Definition of the character strings used in the code. */
 
 #define chain "Bienvenue dans le Shell ENSEA.\nPour quitter, taper 'exit'.\nenseash % " 
 #define out "Bye bye...\n"

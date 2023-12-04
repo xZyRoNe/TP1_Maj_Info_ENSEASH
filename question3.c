@@ -6,7 +6,7 @@
 #include <time.h> 
 
 
-/* Définition des chaînes de caractères utilisées dans le code */
+/* Definition of the character strings used in the code. */
 
 #define chain "Bienvenue dans le Shell ENSEA.\nPour quitter, taper 'exit'.\nenseash % " 
 #define out "Bye bye...\n"
@@ -23,16 +23,16 @@ int main(void)
 	while(1)
 {
 		
-		/* Lecture de la commande de l'utilisateur */
-		/* Le préprocesseur STIN_FILENO est défini avec la valeur de stdout qui vaut 0 */
-		/* On peut lire jusqu'à 1024 caractères */
+		/* Reading user command */
+		/* The STIN_FILENO preprocessor is defined with the value of stdout, which is 0.*/
+		/* One can read up to 1024 characters*/
 		int r = read(STDIN_FILENO,command, 1024); 						
 		
-		/* Gestion de la sortie du shell */
+		/* Handling shell output */
 		
-		/* cas où l'utilisateur fait ctrl+d */
-		/* Ce cas est le seul où il n'y a pas de caractères lus */
-		/* On sort alors du shell avec la fonction exit() prenant EXIT_SUCCESS en argument pour indiquer si le programme s'est terminé avec succès */
+		/* Case where the user presses Ctrl+D*/
+		/* This case is the only one where no characters are read*/
+		/* We exit the shell using the exit() function, taking EXIT_SUCCESS as an argument to indicate if the program has terminated successfully*/
 		if (r == 0) 
 		{ 
 			write(STDOUT_FILENO,"\n"out,sizeof(out)+1);

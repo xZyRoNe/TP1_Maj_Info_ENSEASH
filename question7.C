@@ -1,3 +1,4 @@
+#include "fonctions.h"
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -11,7 +12,8 @@
 #define chain "Bienvenue dans le Shell ENSEA.\nPour quitter, taper 'exit'.\nenseash % " 
 #define out "Bye bye...\n"
 #define prompt "ensea %\n"
-
+#define pbinst "Instruction non trouvée \n"
+#define NC "This command doesn't exist. Are you sure ? \n"
 /**/
 
 int main(void)
@@ -19,7 +21,6 @@ int main(void)
 	char command[1024]="";
 	int pid;
 	int status;
-	
 	
 	/*Display of the welcome message*/
 	write(STDOUT_FILENO,chain,sizeof(chain)); 
@@ -58,34 +59,83 @@ int main(void)
 				exit(EXIT_SUCCESS);
 			}
 		
+		struct timespec start,end;
 		pid=fork(); // creation of a child process similal to the father but with a specific ID
-		pid_t process_id;
-	    process_id = getpid();
+		
 	    
 		if (pid ==0) //child process
-		{ 	printf("pid child %d\n", getpid());
-			sleep(20);
-            write(STDOUT_FILENO, command, sizeof(command));
-			execlp(cmd,cmd, NULL);
-			printf("%d", process_id); // execlp replaces the current process with a new one specified by the given command
+		{	//execution du fils
+			char * left;
+			char * right;
+			char * argv[MAX_ARG]={NULL};
+			int i = 0;
+			int fd;
+			
+			// First call to strtok to find a redirection if there is one.
+			//Searching for ">" or "<"
+			
+			//if redirection : 
+			//1-We open the file with the appropriate attributes
+			//2-We close the output/input flux using dup2.
+			//3-We execute. 
+			
+			left= strtok(command, ">");
+			right = strtok(NULL, "<");
+			if (right != NULL) {
+				fd = open(right, O_CREAT|O_WRONLY|O_CLOEXEC, S_IRWXO|S_IRWXG|S_IRWXU); //1
+				dup2(fd, STDOUT_FILENO); //2
+				strcpy(command, left); //3
+			}
+			left= strtok(command, "<");
+			right = strtok(NULL, ">");
+				printf("%s\n",command);
+			if (right != NULL) {
+				fd = open(right, O_RDWR|O_CLOEXEC, S_IRWXO|S_IRWXG|S_IRWXU); //1
+				dup2(fd, STDIN_FILENO); //2
+				strcpy(command, right); //3
+				
+			}	
+			
+		
+			argv[0] = strtok(command, " ");
+			while (argv[i] != NULL){
+				i++;
+				argv[i] = strtok(NULL, " "); // Each space-separated string is a different argument.
+			}
+			execvp(argv[0], argv);
+			
+			write(STDOUT_FILENO, ERR, strlen(ERR));
+			kill(getpid(),SIGINT);
 		} 											
 			else // Parent process
 			{
-				wait(&status); // Wait for the child process to finish
+				if(pid>0)
+				{
+				  clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&start);
+				  wait(&status); // Wait for the child process to finish
+				}
+				else
+			    {
+				  write(STDOUT_FILENO, "Erreur lors du fork",20);	
+				}
+				
 			}
+			
+			clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&end);
+			 
 			
 		/* Display of the previous command return code */
 		/* Exit case */
 		if (WIFEXITED(status)){
 		char exit_message[100];
-                sprintf(exit_message, "enseash [exit:%d]\n ", WEXITSTATUS(status));
+                sprintf(exit_message, "enseash [exit:%d|%ld ms]\n ", WEXITSTATUS(status),(end.tv_nsec-start.tv_nsec)/1000);//display of the time execution
                 write(STDOUT_FILENO, exit_message, strlen(exit_message));
 			}
 			
 		/* Signal case*/
 		else{
 		char exit_message[100];
-                sprintf(exit_message, "enseash [sign:%d] \n ", WTERMSIG(status));
+                sprintf(exit_message, "enseash [sign:%d|%ld ms] \n ", WTERMSIG(status),(end.tv_nsec-start.tv_nsec)/1000);
                 write(STDOUT_FILENO, exit_message, strlen(exit_message));
 			}
 			free(cmd);
